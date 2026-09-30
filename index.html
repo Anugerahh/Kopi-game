@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kopi Senja Tycoon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Quicksand', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        coffee: {
+                            50: '#fdf8f6',
+                            100: '#f2e8e5',
+                            200: '#eaddd7',
+                            300: '#e0cec7',
+                            400: '#d2bab0',
+                            500: '#a38171',
+                            600: '#866455',
+                            700: '#694a3d',
+                            800: '#4d3329',
+                            900: '#321d15',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #321d15;
+            background-image: radial-gradient(circle at 50% 0%, #4d3329 0%, #321d15 70%);
+            color: #fdf8f6;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .glass-panel {
+            background: rgba(77, 51, 41, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(210, 186, 176, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-card {
+            background: rgba(105, 74, 61, 0.4);
+            border: 1px solid rgba(224, 206, 199, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            background: rgba(134, 100, 85, 0.5);
+            border-color: rgba(224, 206, 199, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(50, 29, 21, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #866455; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a38171; }
+
+        /* Toast Animations */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+        .toast-enter { animation: slideInRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .toast-exit { animation: fadeOut 0.3s forwards; }
+
+        /* Progress Bar Transitions */
+        .progress-bar-fill {
+            transition: width 0.2s linear, background-color 0.3s ease;
+        }
+
+        /* Customer avatars */
+        .customer-emoji {
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            animation: bounce 2s infinite ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        
+        /* Loading Coffee Spinner */
+        .coffee-spinner {
+            width: 24px; height: 24px;
+            border: 3px solid rgba(224, 206, 199, 0.3);
+            border-radius: 50%;
+            border-top-color: #e0cec7;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row text-sm md:text-base">
+
+    <nav class="glass-panel w-full md:w-64 md:h-full flex flex-row md:flex-col p-4 z-20 flex-shrink-0 border-b md:border-b-0 md:border-r border-coffee-700">
+        <div class="hidden md:flex items-center gap-3 mb-8 px-2">
+            <span class="text-3xl">☕</span>
+            <div>
+                <h1 class="font-serif text-xl text-coffee-200 leading-tight">Kopi Senja</h1>
+                <p class="text-xs text-coffee-400 tracking-widest uppercase">Tycoon</p>
+            </div>
+        </div>
+
+        <div class="flex flex-row md:flex-col gap-2 w-full overflow-x-auto md:overflow-visible pb-2 md:pb-0" id="nav-buttons">
+            <button onclick="UI.switchTab('dashboard')" id="nav-dashboard" class="nav-btn flex items-center gap-3 w-full p-3 rounded-lg bg-coffee-600 text-coffee-50 font-semibold shadow-inner transition-colors whitespace-nowrap">
+                <span>📊</span> Dashboard
+            </button>
+            <button onclick="UI.switchTab('dapur')" id="nav-dapur" class="nav-btn flex items-center gap-3 w-full p-3 rounded-lg hover:bg-coffee-700 text-coffee-200 transition-colors whitespace-nowrap">
+                <span>🧪</span> Dapur & Resep
+            </button>
+            <button onclick="UI.switchTab('pasar')" id="nav-pasar" class="nav-btn flex items-center gap-3 w-full p-3 rounded-lg hover:bg-coffee-700 text-coffee-200 transition-colors whitespace-nowrap">
+                <span>🛒</span> Pasar Bahan
+            </button>
+            <button onclick="UI.switchTab('karyawan')" id="nav-karyawan" class="nav-btn flex items-center gap-3 w-full p-3 rounded-lg hover:bg-coffee-700 text-coffee-200 transition-colors whitespace-nowrap">
+                <span>👥</span> Karyawan
+            </button>
+            <button onclick="UI.switchTab('fasilitas')" id="nav-fasilitas" class="nav-btn flex items-center gap-3 w-full p-3 rounded-lg hover:bg-coffee-700 text-coffee-200 transition-colors whitespace-nowrap">
+                <span>🛋️</span> Fasilitas
+            </button>
+            <button onclick="UI.switchTab('riset')" id="nav-riset" class="nav-btn flex items-center gap-3 w-full p-3 rounded-lg hover:bg-coffee-700 text-coffee-200 transition-colors whitespace-nowrap">
+                <span>🔬</span> Penelitian
+            </button>
+        </div>
+
+        <div class="mt-auto hidden md:block pt-4 border-t border-coffee-700 px-2 text-center">
+            <button onclick="Game.saveGame(true)" class="w-full py-2 bg-coffee-800 hover:bg-coffee-700 rounded text-xs text-coffee-300 border border-coffee-600 transition">💾 Simpan Manual</button>
+            <button onclick="Game.resetGame()" class="w-full py-2 mt-2 bg-red-900/50 hover:bg-red-800/80 rounded text-xs text-red-300 border border-red-800 transition">⚠️ Reset Data</button>
+        </div>
+    </nav>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        
+        <!-- Top Status Bar -->
+        <header class="glass-panel p-3 px-6 flex justify-between items-center z-10 shadow-md">
+            <div class="flex items-center gap-6">
+                <!-- Keuangan -->
+                <div class="flex items-center gap-2" title="Total Uang Anda">
+                    <span class="text-2xl">💰</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-coffee-300 uppercase tracking-wider">Keuangan</span>
+                        <span class="font-serif font-bold text-lg text-green-400" id="ui-money">Rp 0</span>
+                    </div>
+                </div>
+                <!-- Waktu -->
+                <div class="flex items-center gap-2" title="Waktu Game">
+                    <span class="text-2xl" id="ui-time-icon">☀️</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-coffee-300 uppercase tracking-wider" id="ui-day">Hari 1</span>
+                        <span class="font-mono font-bold text-lg text-coffee-100" id="ui-time">08:00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <!-- Reputasi (Poin Riset) -->
+                <div class="flex items-center gap-2 text-right hidden sm:flex" title="Poin Reputasi untuk Penelitian">
+                    <div class="flex flex-col">
+                        <span class="text-xs text-coffee-300 uppercase tracking-wider">Reputasi</span>
+                        <span class="font-bold text-purple-300" id="ui-rep">0 Poin</span>
+                    </div>
+                    <span class="text-2xl">🔮</span>
+                </div>
+                <!-- Popularitas -->
+                <div class="flex items-center gap-2 text-right" title="Popularitas memengaruhi kedatangan pelanggan">
+                    <div class="flex flex-col">
+                        <span class="text-xs text-coffee-300 uppercase tracking-wider">Popularitas</span>
+                        <div class="text-yellow-400 text-sm" id="ui-stars">⭐⭐⭐☆☆</div>
+                    </div>
+                    <span class="text-2xl">⭐</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-6 relative scroll-smooth">
+            
+            <!-- TAB: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-pane h-full flex flex-col gap-6">
+                
+                <!-- Info Status Toko -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-coffee-300">Status Kafe</p>
+                            <p class="font-bold text-lg" id="dash-status">Buka</p>
+                        </div>
+                        <span class="text-2xl opacity-80" id="dash-status-icon">🚪</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-coffee-300">Kapasitas</p>
+                            <p class="font-bold text-lg"><span id="dash-customers-count">0</span> / <span id="dash-capacity">4</span></p>
+                        </div>
+                        <span class="text-2xl opacity-80">🪑</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-coffee-300">Penjualan Hari Ini</p>
+                            <p class="font-bold text-lg text-green-400" id="dash-sales">0 Gelas</p>
+                        </div>
+                        <span class="text-2xl opacity-80">☕</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-coffee-300">Pengeluaran Harian</p>
+                            <p class="font-bold text-lg text-red-400" id="dash-expenses">-Rp 0</p>
+                        </div>
+                        <span class="text-2xl opacity-80">📉</span>
+                    </div>
+                </div>
+
+                <!-- Visualisasi Area Toko -->
+                <div class="flex-1 glass-panel rounded-2xl p-4 flex flex-col relative overflow-hidden min-h-[300px]">
+                    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyMjQsIDIwNiwgMTk5LCAwLjA1KSIvPjwvc3ZnPg==')] opacity-50 pointer-events-none"></div>
+                    
+                    <h2 class="font-serif text-xl mb-4 text-coffee-200 z-10">Lantai Kafe</h2>
+                    
+                    <div class="flex-1 flex gap-4 z-10">
+                        <!-- Area Antrean -->
+                        <div class="w-1/3 bg-coffee-900/50 rounded-xl p-3 border border-coffee-700/50 flex flex-col">
+                            <h3 class="text-sm font-bold text-coffee-300 mb-2 border-b border-coffee-700 pb-1">Antrean Kasir</h3>
+                            <div id="render-queue" class="flex-1 flex flex-col gap-2 overflow-y-auto pr-1">
+                                <!-- Antrean di-render di sini -->
+                            </div>
+                        </div>
+
+                        <!-- Area Duduk & Karyawan -->
+                        <div class="w-2/3 flex flex-col gap-4">
+                            <!-- Karyawan / Barista Station -->
+                            <div class="h-24 bg-coffee-800/60 rounded-xl border border-coffee-600 p-3 flex items-center gap-3 overflow-x-auto" id="render-staff-station">
+                                <!-- Karyawan kerja dirender di sini -->
+                            </div>
+                            
+                            <!-- Meja Pelanggan -->
+                            <div class="flex-1 bg-coffee-900/50 rounded-xl border border-coffee-700/50 p-3 relative" id="render-tables">
+                                <!-- Pelanggan duduk dirender di sini -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-dapur" class="tab-pane hidden h-full flex flex-col gap-6">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h2 class="font-serif text-2xl text-coffee-100 mb-2">Eksperimen Resep</h2>
+                    <p class="text-coffee-300 text-sm mb-6">Campurkan bahan-bahan baku untuk menemukan resep rahasia baru. Jika tebakanmu benar, menu akan ditambahkan ke daftar jual!</p>
+                    
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <!-- Area Pemilihan Bahan -->
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-coffee-300 mb-3 uppercase tracking-wider">Inventaris Bahan</h3>
+                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2" id="craft-inventory">
+                                <!-- Tombol bahan baku di-render di sini -->
+                            </div>
+                        </div>
+
+                        <!-- Area Panci Campuran -->
+                        <div class="md:w-72 bg-coffee-900/80 rounded-xl p-4 border border-coffee-700 shadow-inner flex flex-col items-center justify-center">
+                            <div class="text-4xl mb-4 filter drop-shadow-lg" id="cauldron-icon">🧪</div>
+                            <div id="craft-slots" class="flex gap-2 mb-6 min-h-[40px]">
+                                <!-- Slot bahan yang dipilih -->
+                            </div>
+                            <div class="flex gap-2 w-full">
+                                <button onclick="Crafting.clear()" class="px-3 py-2 bg-coffee-800 hover:bg-coffee-700 text-coffee-300 rounded text-sm w-1/3 transition">Reset</button>
+                                <button onclick="Crafting.brew()" class="px-3 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded text-sm w-2/3 transition shadow-lg flex justify-center items-center gap-2">
+                                    <span>Racik!</span> <span class="text-lg">✨</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl flex-1">
+                    <h2 class="font-serif text-xl text-coffee-100 mb-4 border-b border-coffee-700 pb-2">Menu Kafe Anda (<span id="unlocked-recipe-count">0</span>/15)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto" id="recipe-list">
+                        <!-- Daftar resep dirender di sini -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-pasar" class="tab-pane hidden flex flex-col gap-6">
+                <div class="glass-panel p-6 rounded-2xl mb-4 flex justify-between items-center">
+                    <div>
+                        <h2 class="font-serif text-2xl text-coffee-100">Pasar Pagi</h2>
+                        <p class="text-coffee-300 text-sm">Beli bahan baku. Harga berfluktuasi setiap hari!</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-coffee-400">Pembaruan Harga Berikutnya</p>
+                        <p class="font-mono text-lg text-coffee-200">Jam 06:00 Pagi</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="market-list">
+                    <!-- Item pasar dirender di sini -->
+                </div>
+            </section>
+
+            <section id="tab-karyawan" class="tab-pane hidden flex flex-col gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                    <!-- Karyawan Saat Ini -->
+                    <div class="lg:col-span-2 glass-panel p-6 rounded-2xl flex flex-col">
+                        <h2 class="font-serif text-xl text-coffee-100 mb-4 border-b border-coffee-700 pb-2 flex justify-between items-center">
+                            <span>Tim Karyawan</span>
+                            <span class="text-sm bg-coffee-800 px-2 py-1 rounded text-coffee-300"><span id="staff-count">0</span> / <span id="staff-limit">0</span> Kapasitas</span>
+                        </h2>
+                        <div class="flex-1 flex flex-col gap-3 overflow-y-auto pr-2" id="hired-staff-list">
+                            <!-- Karyawan yang disewa -->
+                        </div>
+                    </div>
+
+                    <!-- Rekrutmen -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col">
+                        <h2 class="font-serif text-xl text-coffee-100 mb-4 border-b border-coffee-700 pb-2">Bursa Tenaga Kerja</h2>
+                        <p class="text-xs text-coffee-300 mb-4">Kandidat baru muncul setiap hari.</p>
+                        <div class="flex flex-col gap-4 overflow-y-auto pr-2" id="staff-market-list">
+                            <!-- Kandidat -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-fasilitas" class="tab-pane hidden flex flex-col gap-6">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h2 class="font-serif text-2xl text-coffee-100 mb-2">Fasilitas Toko</h2>
+                    <p class="text-coffee-300 text-sm mb-6">Tingkatkan perlengkapan untuk melayani lebih banyak dan lebih cepat.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="upgrades-list">
+                        <!-- Upgrades -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-riset" class="tab-pane hidden flex flex-col gap-6">
+                <div class="glass-panel p-6 rounded-2xl bg-gradient-to-br from-coffee-900 to-purple-900/30">
+                    <div class="flex justify-between items-start mb-6 border-b border-coffee-700 pb-4">
+                        <div>
+                            <h2 class="font-serif text-2xl text-purple-200 mb-1">Pohon Penelitian</h2>
+                            <p class="text-coffee-300 text-sm">Gunakan Poin Reputasi untuk membuka strategi baru.</p>
+                        </div>
+                        <div class="bg-purple-900/50 border border-purple-500/30 px-4 py-2 rounded-lg text-center">
+                            <p class="text-xs text-purple-300 uppercase tracking-widest">Saldo Reputasi</p>
+                            <p class="font-bold text-xl text-purple-100" id="research-rep-display">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="research-list">
+                        <!-- Riset -->
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-72 pointer-events-none"></div>
+
+    <script>
+        // --- 1. DATABASES ---
+        
+        const DB_INGREDIENTS = {
+            kopi: { id: 'kopi', name: 'Biji Kopi Robusta', basePrice: 2000, icon: '☕' },
+            arabika: { id: 'arabika', name: 'Biji Kopi Arabika', basePrice: 4000, icon: '🫘' },
+            air: { id: 'air', name: 'Air Murni', basePrice: 500, icon: '💧' },
+            gula: { id: 'gula', name: 'Gula Tebu', basePrice: 1000, icon: '🧊' },
+            susu: { id: 'susu', name: 'Susu Sapi Segar', basePrice: 2500, icon: '🥛' },
+            aren: { id: 'aren', name: 'Gula Aren', basePrice: 2000, icon: '🍯' },
+            teh: { id: 'teh', name: 'Daun Teh Hitam', basePrice: 1500, icon: '🍃' },
+            matcha: { id: 'matcha', name: 'Bubuk Matcha', basePrice: 5000, icon: '🍵' },
+            es: { id: 'es', name: 'Es Batu Kristal', basePrice: 500, icon: '🧊' },
+            karamel: { id: 'karamel', name: 'Sirup Karamel', basePrice: 3500, icon: '🍮' },
+            coklat: { id: 'coklat', name: 'Bubuk Coklat', basePrice: 3000, icon: '🍫' }
+        };
+
+        const DB_RECIPES = [
+            { id: 'kopihitam', name: 'Kopi Tubruk', ingredients: ['kopi', 'air'], price: 8000, prepTime: 5, icon: '☕', desc: 'Klasik, pahit, dan menendang.' },
+            { id: 'kopigula', name: 'Kopi Manis', ingredients: ['kopi', 'air', 'gula'], price: 9000, prepTime: 6, icon: '☕', desc: 'Kopi hitam dengan manisnya gula tebu.' },
+            { id: 'espresso', name: 'Double Espresso', ingredients: ['kopi', 'kopi', 'air'], price: 12000, prepTime: 8, icon: '🍵', desc: 'Ekstrak murni kafein. Sangat pekat.' },
+            { id: 'kopisusu', name: 'Kopi Susu Biasa', ingredients: ['kopi', 'air', 'susu'], price: 12000, prepTime: 7, icon: '🥛', desc: 'Lembut dengan perpaduan susu.' },
+            { id: 'cappuccino', name: 'Cappuccino', ingredients: ['arabika', 'susu', 'air'], price: 18000, prepTime: 12, icon: '☕', desc: 'Espresso dengan foam susu tebal.' },
+            { id: 'kopsusaren', name: 'Kopi Susu Gula Aren', ingredients: ['kopi', 'susu', 'aren', 'es'], price: 18000, prepTime: 10, icon: '🧋', desc: 'Minuman kekinian favorit senja.' },
+            { id: 'americano', name: 'Iced Americano', ingredients: ['arabika', 'air', 'es'], price: 15000, prepTime: 8, icon: '🥤', desc: 'Espresso segar dingin.' },
+            { id: 'tehmanis', name: 'Es Teh Manis', ingredients: ['teh', 'air', 'gula', 'es'], price: 6000, prepTime: 5, icon: '🍹', desc: 'Penyegar dahaga standar warga.' },
+            { id: 'milktea', name: 'Milk Tea', ingredients: ['teh', 'air', 'susu', 'gula'], price: 12000, prepTime: 8, icon: '🧋', desc: 'Teh susu klasik.' },
+            { id: 'matchalatte', name: 'Matcha Latte', ingredients: ['matcha', 'air', 'susu'], price: 22000, prepTime: 14, icon: '🍵', desc: 'Hijau, sehat, dan aesthetic.' },
+            { id: 'esmatcha', name: 'Iced Matcha', ingredients: ['matcha', 'air', 'susu', 'es'], price: 24000, prepTime: 15, icon: '🥤', desc: 'Matcha dingin untuk cuaca panas.' },
+            { id: 'caramelmacchiato', name: 'Caramel Macchiato', ingredients: ['arabika', 'susu', 'karamel', 'es'], price: 25000, prepTime: 16, icon: '🥤', desc: 'Manis mewah ala kafe mahal.' },
+            { id: 'mochaccino', name: 'Mochaccino', ingredients: ['arabika', 'susu', 'coklat', 'air'], price: 22000, prepTime: 15, icon: '☕', desc: 'Kopi bertemu dengan lezatnya coklat.' },
+            { id: 'escoklat', name: 'Es Coklat', ingredients: ['coklat', 'susu', 'gula', 'es'], price: 18000, prepTime: 10, icon: '🥤', desc: 'Bukan kopi, tapi bikin happy.' }
+        ];
+
+        const DB_UPGRADES = {
+            table1: { id: 'table1', name: 'Meja Kayu Ekstra', desc: '+1 Kapasitas Pelanggan (Max 6)', type: 'capacity', cost: 50000, maxTier: 4, value: 1, icon: '🪑' },
+            table2: { id: 'table2', name: 'Sofa Nyaman', desc: '+2 Kapasitas Pelanggan (Max 12)', type: 'capacity', cost: 150000, maxTier: 3, value: 2, icon: '🛋️' },
+            machine1: { id: 'machine1', name: 'Mesin Espresso Basic', desc: 'Kecepatan racik +10%', type: 'speed', cost: 100000, maxTier: 1, value: 0.1, icon: '📠' },
+            machine2: { id: 'machine2', name: 'Mesin Kopi Pro', desc: 'Kecepatan racik +25%', type: 'speed', cost: 350000, maxTier: 1, value: 0.25, icon: '⚙️' },
+            decor1: { id: 'decor1', name: 'Tanaman Hias', desc: '+Batas Kesabaran Pelanggan', type: 'patience', cost: 25000, maxTier: 5, value: 5, icon: '🪴' },
+            decor2: { id: 'decor2', name: 'Lampu Estetik', desc: '+Peluang Uang Tip (5%)', type: 'tip', cost: 80000, maxTier: 3, value: 0.05, icon: '💡' }
+        };
+
+        const DB_RESEARCH = {
+            marketing1: { id: 'marketing1', name: 'Brosur Jalanan', desc: '+15% Kedatangan Pelanggan', cost: 50, icon: '📄' },
+            marketing2: { id: 'marketing2', name: 'Iklan Sosmed', desc: '+30% Kedatangan Pelanggan', cost: 150, icon: '📱' },
+            quality1: { id: 'quality1', name: 'Pelatihan Senyum', desc: '+10% Reputasi dari Pelanggan', cost: 80, icon: '😊' },
+            hr1: { id: 'hr1', name: 'Loker Premium', desc: '+1 Slot Maksimal Karyawan', cost: 200, icon: '🤝' },
+            hr2: { id: 'hr2', name: 'Manajer Shift', desc: '+1 Slot Maksimal Karyawan', cost: 400, icon: '👔' }
+        };
+
+        const EMOJI_FACES = ['🧑', '👨', '👩', '👱‍♂️', '👱‍♀️', '👨‍🦰', '👩‍🦱', '🧔', '👩‍‍🦳', '👴', '👵'];
+
+        // --- 2. GAME STATE ---
+        let GS = {
+            money: 150000,
+            day: 1,
+            hour: 8,
+            minute: 0,
+            reputation: 0,
+            popularityLog: [3, 3, 3, 3, 3], // Default 3 stars
+            inventory: {},
+            marketPrices: {},
+            unlockedRecipes: ['kopihitam'],
+            upgrades: {},
+            research: {},
+            staff: [],
+            stats: {
+                totalSales: 0,
+                dailySales: 0,
+                dailyExpenses: 0,
+                customersServed: 0
+            }
+        };
+
+        // Initialize empty inventory and upgrades
+        Object.keys(DB_INGREDIENTS).forEach(k => GS.inventory[k] = 20); // Start with 20 each
+        Object.keys(DB_UPGRADES).forEach(k => GS.upgrades[k] = 0);
+        Object.keys(DB_RESEARCH).forEach(k => GS.research[k] = false);
+
+        // Runtime variables (not saved)
+        let RT = {
+            lastTick: performance.now(),
+            gameSpeed: 1, // 1 real sec = x in-game mins. Set to fast for simulation.
+            isPaused: false,
+            customers: [],
+            marketCandidates: [], // Staff to hire
+            activeTab: 'dashboard'
+        };
+
+        const AudioSys = {
+            ctx: null,
+            init: function() {
+                if(!this.ctx) {
+                    try {
+                        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                        this.ctx = new AudioContext();
+                        this.startAmbience();
+                    } catch(e) { console.warn("Web Audio API not supported"); }
+                }
+            },
+            playTone: function(freq, type, duration, vol=0.1) {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            playCash: function() {
+                if(!this.ctx) return;
+                this.playTone(880, 'sine', 0.1, 0.1);
+                setTimeout(() => this.playTone(1760, 'sine', 0.2, 0.1), 100);
+            },
+            playError: function() {
+                this.playTone(150, 'sawtooth', 0.3, 0.2);
+            },
+            playSuccess: function() {
+                this.playTone(523.25, 'sine', 0.1, 0.1);
+                setTimeout(() => this.playTone(659.25, 'sine', 0.1, 0.1), 100);
+                setTimeout(() => this.playTone(783.99, 'sine', 0.3, 0.1), 200);
+            },
+            startAmbience: function() {
+                if(!this.ctx) return;
+                // Brown noise for cafe murmur
+                const bufferSize = 2 * this.ctx.sampleRate;
+                const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                let lastOut = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    output[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = output[i];
+                    output[i] *= 3.5; 
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = noiseBuffer;
+                noise.loop = true;
+                
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 400;
+
+                const gain = this.ctx.createGain();
+                gain.gain.value = 0.03; // Very quiet background
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+        };
+
+        const Utils = {
+            formatRupiah: (num) => 'Rp ' + Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."),
+            randomRange: (min, max) => Math.random() * (max - min) + min,
+            randomInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
+            getPopularity: () => {
+                if(GS.popularityLog.length === 0) return 3;
+                let sum = GS.popularityLog.reduce((a, b) => a + b, 0);
+                return (sum / GS.popularityLog.length).toFixed(1);
+            },
+            getShopCapacity: () => {
+                let base = 2; // Default 2 seats
+                base += GS.upgrades.table1 * DB_UPGRADES.table1.value;
+                base += GS.upgrades.table2 * DB_UPGRADES.table2.value;
+                return base;
+            },
+            getMaxStaff: () => {
+                let base = 1; // Default you + 1 maybe? Let's say default is 2 slots.
+                base += GS.research.hr1 ? 1 : 0;
+                base += GS.research.hr2 ? 1 : 0;
+                return base + 1; // Base 2 slots
+            },
+            getPrepSpeedMultiplier: () => {
+                let mult = 1.0;
+                if(GS.upgrades.machine1 > 0) mult -= DB_UPGRADES.machine1.value;
+                if(GS.upgrades.machine2 > 0) mult -= DB_UPGRADES.machine2.value;
+                return Math.max(0.3, mult); // Cap at 70% faster
+            },
+            getPatienceBonus: () => {
+                return GS.upgrades.decor1 * DB_UPGRADES.decor1.value;
+            },
+            showToast: (msg, type='info') => {
+                const container = document.getElementById('toast-container');
+                const t = document.createElement('div');
+                const colors = {
+                    info: 'bg-coffee-700 border-coffee-500 text-coffee-100',
+                    success: 'bg-green-800 border-green-600 text-green-100',
+                    error: 'bg-red-800 border-red-600 text-red-100',
+                    money: 'bg-yellow-700 border-yellow-500 text-yellow-100'
+                };
+                t.className = `toast-enter glass-panel border p-3 rounded-lg shadow-lg flex items-center gap-2 ${colors[type]}`;
+                let icon = type==='success'?'✅':type==='error'?'❌':type==='money'?'💰':'ℹ️';
+                t.innerHTML = `<span>${icon}</span><span class="text-sm font-semibold">${msg}</span>`;
+                container.appendChild(t);
+                setTimeout(() => {
+                    t.classList.replace('toast-enter', 'toast-exit');
+                    setTimeout(() => t.remove(), 300);
+                }, 3000);
+            }
+        };
+
+        class Customer {
+            constructor() {
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.emoji = EMOJI_FACES[Utils.randomInt(0, EMOJI_FACES.length-1)];
+                this.state = 'queueing'; // queueing, ordering, waiting, seated, leaving
+                this.maxPatience = Utils.randomInt(40, 80) + Utils.getPatienceBonus();
+                this.patience = this.maxPatience;
+                this.order = null;
+                this.serveProgress = 0; // 0 to 1
+                this.servedBy = null;
+                
+                // Pick a random unlocked recipe
+                const available = GS.unlockedRecipes;
+                const recipeId = available[Utils.randomInt(0, available.length-1)];
+                this.order = DB_RECIPES.find(r => r.id === recipeId);
+            }
+
+            tick(dt) {
+                if (this.state === 'leaving') return;
+
+                // Decrease patience
+                if (this.state === 'queueing' || this.state === 'waiting') {
+                    this.patience -= dt * 1; // Lose 1 patience per in-game minute
+                    if (this.patience <= 0) {
+                        this.leaveAngry();
+                    }
+                }
+            }
+
+            leaveAngry() {
+                this.state = 'leaving';
+                Utils.showToast("Pelanggan pergi karena terlalu lama!", "error");
+                AudioSys.playError();
+                Game.addReview(1); // 1 star
+                
+                // Free up staff if they were serving
+                if(this.servedBy) {
+                    this.servedBy.state = 'idle';
+                    this.servedBy.currentTask = null;
+                }
+            }
+
+            receiveOrder() {
+                this.state = 'seated';
+                // Calculate rating based on remaining patience
+                let ratio = this.patience / this.maxPatience;
+                let stars = ratio > 0.6 ? 5 : ratio > 0.3 ? 4 : ratio > 0.1 ? 3 : 2;
+                
+                // Tip logic
+                let tipChance = (GS.upgrades.decor2 * DB_UPGRADES.decor2.value);
+                let tip = 0;
+                if(Math.random() < tipChance && stars >= 4) {
+                    tip = Math.floor(this.order.price * 0.15);
+                }
+
+                let totalPay = this.order.price + tip;
+                Game.earnMoney(totalPay);
+                GS.stats.dailySales++;
+                GS.stats.totalSales++;
+                Game.addReview(stars);
+                
+                if(tip > 0) Utils.showToast(`Mendapat Tip +${Utils.formatRupiah(tip)}!`, "money");
+                AudioSys.playCash();
+
+                // Stay seated for a while then leave
+                setTimeout(() => {
+                    this.state = 'leaving';
+                    UI.renderDashboard();
+                }, Utils.randomRange(2000, 5000)); // real ms
+            }
+        }
+
+        class Staff {
+            constructor(name, speed, skill, salary) {
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.name = name;
+                this.speed = speed; // multiplier for prep time (higher = faster)
+                this.skill = skill; // unused logic for now, maybe reduce ingredient waste chance
+                this.salary = salary; // daily expense
+                this.state = 'idle'; // idle, serving
+                this.currentTask = null; // ref to customer
+            }
+
+            tick(dt) {
+                if (this.state === 'serving' && this.currentTask) {
+                    let cust = this.currentTask;
+                    if(cust.state === 'leaving') {
+                        this.state = 'idle';
+                        this.currentTask = null;
+                        return;
+                    }
+
+                    // Calculate time needed
+                    let baseTime = cust.order.prepTime;
+                    let realTimeNeed = baseTime * Utils.getPrepSpeedMultiplier() / this.speed;
+                    
+                    cust.serveProgress += (dt / realTimeNeed);
+
+                    if (cust.serveProgress >= 1) {
+                        cust.receiveOrder();
+                        this.state = 'idle';
+                        this.currentTask = null;
+                    }
+                }
+            }
+        }
+
+        const Game = {
+            init: function() {
+                this.loadGame();
+                this.generateMarketPrices();
+                if(GS.staff.length === 0) {
+                    // Give player a starter staff (Owner) automatically
+                    GS.staff.push(new Staff("Anda (Owner)", 1.0, 1.0, 0));
+                }
+                this.generateStaffMarket();
+                UI.init();
+                
+                // Add click listener to start Audio
+                document.body.addEventListener('click', () => { AudioSys.init(); }, {once:true});
+                
+                // Start Loop
+                this.lastRealTime = performance.now();
+                requestAnimationFrame(this.loop.bind(this));
+            },
+
+            loadGame: function() {
+                let saved = localStorage.getItem('kopiSenjaSave');
+                if(saved) {
+                    try {
+                        let parsed = JSON.parse(saved);
+                        // Merge missing keys to prevent breaking updates
+                        GS = { ...GS, ...parsed };
+                        
+                        // Re-instantiate staff objects to get class methods
+                        GS.staff = GS.staff.map(s => {
+                            let st = new Staff(s.name, s.speed, s.skill, s.salary);
+                            st.id = s.id;
+                            return st;
+                        });
+                        
+                        Utils.showToast("Data permainan dimuat.", "success");
+                    } catch(e) { console.error("Save corrupted"); }
+                }
+            },
+
+            saveGame: function(manual=false) {
+                localStorage.setItem('kopiSenjaSave', JSON.stringify(GS));
+                if(manual) Utils.showToast("Permainan disimpan!", "success");
+            },
+
+            resetGame: function() {
+                if(confirm("Yakin ingin mereset semua data permainan?")) {
+                    localStorage.removeItem('kopiSenjaSave');
+                    location.reload();
+                }
+            },
+
+            generateMarketPrices: function() {
+                Object.keys(DB_INGREDIENTS).forEach(k => {
+                    let base = DB_INGREDIENTS[k].basePrice;
+                    // fluctuate -20% to +30%
+                    let varPercent = Utils.randomRange(-0.2, 0.3);
+                    GS.marketPrices[k] = Math.max(100, Math.floor(base * (1 + varPercent)));
+                });
+            },
+
+            generateStaffMarket: function() {
+                const names = ["Budi", "Siti", "Andi", "Ratna", "Joko", "Ayu", "Rizky", "Dewi"];
+                RT.marketCandidates = [];
+                for(let i=0; i<3; i++) {
+                    let spd = Utils.randomRange(0.8, 1.5).toFixed(2);
+                    let skl = Utils.randomRange(0.8, 1.5).toFixed(2);
+                    let sal = Math.floor(Utils.randomRange(30000, 80000) / 5000) * 5000;
+                    RT.marketCandidates.push(new Staff(names[Utils.randomInt(0,names.length-1)], parseFloat(spd), parseFloat(skl), sal));
+                }
+            },
+
+            earnMoney: function(amount) {
+                GS.money += amount;
+                UI.updateStats();
+            },
+
+            spendMoney: function(amount, reason="") {
+                if(GS.money >= amount) {
+                    GS.money -= amount;
+                    if(reason === 'expense') GS.stats.dailyExpenses += amount;
+                    UI.updateStats();
+                    return true;
+                }
+                Utils.showToast("Uang tidak cukup!", "error");
+                AudioSys.playError();
+                return false;
+            },
+
+            addReview: function(stars) {
+                GS.popularityLog.push(stars);
+                if(GS.popularityLog.length > 10) GS.popularityLog.shift(); // Keep last 10
+                
+                // Earn rep based on stars + quality research
+                let repBonus = GS.research.quality1 ? 1.1 : 1.0;
+                let earnedRep = Math.floor(stars * repBonus);
+                if(stars >= 4) GS.reputation += earnedRep;
+                
+                UI.updateStats();
+            },
+
+            // MAIN LOOP
+            loop: function(now) {
+                if(!RT.isPaused) {
+                    let dtReal = (now - this.lastRealTime) / 1000; // seconds passed
+                    this.lastRealTime = now;
+                    
+                    // Game speed: 1 real second = 2 in-game minutes
+                    let dtGameMins = dtReal * 2; 
+                    
+                    this.advanceTime(dtGameMins);
+                    this.simulateShop(dtGameMins);
+                    UI.renderDashboardInterval(); // Only render bits of dashboard that change frequently
+                }
+                requestAnimationFrame(this.loop.bind(this));
+            },
+
+            advanceTime: function(dtMins) {
+                GS.minute += dtMins;
+                if(GS.minute >= 60) {
+                    GS.minute -= 60;
+                    GS.hour += 1;
+                    UI.updateStats();
+                    
+                    // Hourly logic
+                    if(GS.hour === 22) {
+                        // Shop closes at 22:00
+                        RT.customers.forEach(c => c.state = 'leaving'); // kick everyone
+                        Utils.showToast("Kafe Tutup! Menghitung kas harian...", "info");
+                    }
+                    
+                    if(GS.hour >= 24) {
+                        // New Day
+                        GS.hour = 0;
+                        GS.day += 1;
+                        this.processDailyRoutine();
+                    }
+                }
+            },
+
+            processDailyRoutine: function() {
+                // Pay staff salaries
+                let totalSalary = GS.staff.reduce((sum, s) => sum + s.salary, 0);
+                let rent = 50000; // Base daily rent
+                let totalExpenses = totalSalary + rent;
+                
+                if(this.spendMoney(totalExpenses, 'expense')) {
+                    Utils.showToast(`Biaya operasional harian dipotong: ${Utils.formatRupiah(totalExpenses)}`, "info");
+                } else {
+                    // Debt / Game Over logic could go here. For now just subtract to negative
+                    GS.money -= totalExpenses;
+                    Utils.showToast(`Kafe berhutang! Kas minus.`, "error");
+                }
+
+                // Reset daily stats
+                GS.stats.dailySales = 0;
+                GS.stats.dailyExpenses = 0;
+                
+                this.generateMarketPrices();
+                this.generateStaffMarket();
+                this.saveGame();
+                UI.updateMarket();
+                UI.updateStaffTab();
+                Utils.showToast(`Hari ${GS.day} dimulai! Harga pasar berubah.`, "info");
+            },
+
+            simulateShop: function(dtMins) {
+                let isOpen = GS.hour >= 8 && GS.hour < 22;
+
+                // Remove leaving customers
+                RT.customers = RT.customers.filter(c => c.state !== 'leaving');
+
+                if (isOpen) {
+                    // Spawn logic
+                    let pop = parseFloat(Utils.getPopularity());
+                    let marketingMult = 1.0;
+                    if(GS.research.marketing1) marketingMult += 0.15;
+                    if(GS.research.marketing2) marketingMult += 0.30;
+                    
+                    // Chance to spawn per minute depends on popularity and marketing
+                    let spawnChance = (0.05 * pop * marketingMult) * dtMins; 
+                    
+                    // Peak hours (12-14, 18-20)
+                    if((GS.hour >= 12 && GS.hour <= 14) || (GS.hour >= 18 && GS.hour <= 20)) {
+                        spawnChance *= 1.5;
+                    }
+
+                    // Check capacity constraints
+                    let currentCustomers = RT.customers.length;
+                    let maxCap = Utils.getShopCapacity() + 2; // Can queue up to +2 of seated capacity
+                    
+                    if(currentCustomers < maxCap && Math.random() < spawnChance) {
+                        RT.customers.push(new Customer());
+                        AudioSys.playTone(440, 'triangle', 0.1, 0.05); // Tiny door chime
+                    }
+                }
+
+                // AI Logic Update
+                RT.customers.forEach(c => c.tick(dtMins));
+                GS.staff.forEach(s => s.tick(dtMins));
+
+                // Assign idle staff to waiting queue
+                let queue = RT.customers.filter(c => c.state === 'queueing');
+                let idleStaff = GS.staff.filter(s => s.state === 'idle');
+
+                queue.forEach(cust => {
+                    if(idleStaff.length > 0) {
+                        let worker = idleStaff.shift(); // Take first idle staff
+                        
+                        // Check ingredients
+                        let canMake = true;
+                        let required = {};
+                        cust.order.ingredients.forEach(i => { required[i] = (required[i]||0)+1; });
+                        
+                        for(let i in required) {
+                            if(!GS.inventory[i] || GS.inventory[i] < required[i]) {
+                                canMake = false; break;
+                            }
+                        }
+
+                        if(canMake) {
+                            // Deduct inventory
+                            for(let i in required) { GS.inventory[i] -= required[i]; }
+                            // Start serving
+                            cust.state = 'waiting';
+                            cust.servedBy = worker;
+                            worker.state = 'serving';
+                            worker.currentTask = cust;
+                        } else {
+                            // Can't make, customer angry
+                            cust.leaveAngry();
+                            Utils.showToast(`Bahan habis untuk ${cust.order.name}!`, "error");
+                        }
+                    }
+                });
+            }
+        };
+
+        const UI = {
+            init: function() {
+                this.switchTab('dashboard');
+                this.updateStats();
+                setInterval(() => this.updateStats(), 1000); // UI clock update
+            },
+
+            switchTab: function(tabId) {
+                RT.activeTab = tabId;
+                // Hide all tabs
+                document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+                // Remove active styling
+                document.querySelectorAll('.nav-btn').forEach(el => {
+                    el.classList.remove('bg-coffee-600', 'text-coffee-50', 'shadow-inner');
+                    el.classList.add('text-coffee-200', 'hover:bg-coffee-700');
+                });
+
+                // Show active
+                document.getElementById('tab-' + tabId).classList.remove('hidden');
+                let btn = document.getElementById('nav-' + tabId);
+                btn.classList.add('bg-coffee-600', 'text-coffee-50', 'shadow-inner');
+                btn.classList.remove('text-coffee-200', 'hover:bg-coffee-700');
+
+                // Re-render specific tab data
+                if(tabId === 'dapur') Crafting.render();
+                if(tabId === 'pasar') this.updateMarket();
+                if(tabId === 'fasilitas') this.updateUpgradesTab();
+                if(tabId === 'karyawan') this.updateStaffTab();
+                if(tabId === 'riset') this.updateResearchTab();
+            },
+
+            updateStats: function() {
+                document.getElementById('ui-money').innerText = Utils.formatRupiah(GS.money);
+                
+                let h = Math.floor(GS.hour).toString().padStart(2, '0');
+                let m = Math.floor(GS.minute).toString().padStart(2, '0');
+                document.getElementById('ui-time').innerText = `${h}:${m}`;
+                document.getElementById('ui-day').innerText = `Hari ${GS.day}`;
+                document.getElementById('ui-time-icon').innerText = (GS.hour>=6 && GS.hour<18) ? '☀️' : '🌙';
+                
+                let pop = Utils.getPopularity();
+                let starStr = '';
+                for(let i=1; i<=5; i++) { starStr += (i <= Math.round(pop)) ? '⭐' : '☆'; }
+                document.getElementById('ui-stars').innerText = starStr;
+                
+                document.getElementById('ui-rep').innerText = `${GS.reputation} Poin`;
+                
+                // Dashboard dynamic numbers
+                if(RT.activeTab === 'dashboard') {
+                    document.getElementById('dash-status').innerText = (GS.hour >= 8 && GS.hour < 22) ? 'BUKA' : 'TUTUP';
+                    document.getElementById('dash-status').className = (GS.hour >= 8 && GS.hour < 22) ? 'font-bold text-lg text-green-400' : 'font-bold text-lg text-red-400';
+                    document.getElementById('dash-capacity').innerText = Utils.getShopCapacity();
+                    
+                    let seated = RT.customers.filter(c => c.state === 'seated').length;
+                    document.getElementById('dash-customers-count').innerText = seated;
+                    document.getElementById('dash-sales').innerText = `${GS.stats.dailySales} Gelas`;
+                    document.getElementById('dash-expenses').innerText = `-` + Utils.formatRupiah(GS.stats.dailyExpenses);
+                }
+            },
+
+            renderDashboardInterval: function() {
+                if(RT.activeTab !== 'dashboard') return;
+
+                // Render Queue
+                const qDiv = document.getElementById('render-queue');
+                const qCusts = RT.customers.filter(c => c.state === 'queueing' || c.state === 'waiting');
+                
+                let qHtml = '';
+                qCusts.forEach(c => {
+                    let patPercent = (c.patience / c.maxPatience) * 100;
+                    let patColor = patPercent > 60 ? 'bg-green-500' : patPercent > 30 ? 'bg-yellow-500' : 'bg-red-500';
+                    qHtml += `
+                        <div class="bg-coffee-800/80 p-2 rounded text-xs flex flex-col gap-1 shadow">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xl customer-emoji">${c.emoji}</span>
+                                <span class="truncate ml-2 text-coffee-200" title="${c.order.name}">${c.order.icon} ${c.order.name}</span>
+                            </div>
+                            <div class="w-full bg-coffee-900 rounded-full h-1 mt-1">
+                                <div class="${patColor} h-1 rounded-full progress-bar-fill" style="width: ${patPercent}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                if(qCusts.length === 0) qHtml = '<p class="text-xs text-coffee-400 text-center mt-4 italic">Antrean kosong...</p>';
+                qDiv.innerHTML = qHtml;
+
+                // Render Staff
+                const sDiv = document.getElementById('render-staff-station');
+                let sHtml = '';
+                GS.staff.forEach(s => {
+                    if(s.state === 'idle') {
+                        sHtml += `
+                            <div class="w-16 h-16 bg-coffee-700/50 rounded-lg flex flex-col items-center justify-center border border-coffee-600 shrink-0">
+                                <span class="text-2xl">🧍</span>
+                                <span class="text-[10px] text-coffee-300 truncate w-full text-center px-1">${s.name}</span>
+                            </div>
+                        `;
+                    } else if (s.state === 'serving') {
+                        let prog = (s.currentTask ? s.currentTask.serveProgress * 100 : 0);
+                        sHtml += `
+                            <div class="w-16 h-16 bg-coffee-600 rounded-lg flex flex-col items-center justify-center border border-green-500/50 shrink-0 relative overflow-hidden">
+                                <div class="absolute bottom-0 left-0 bg-green-500/20 w-full progress-bar-fill" style="height: ${prog}%"></div>
+                                <div class="coffee-spinner absolute"></div>
+                                <span class="text-2xl z-10 opacity-50">🧍</span>
+                            </div>
+                        `;
+                    }
+                });
+                sDiv.innerHTML = sHtml;
+
+                // Render Seated Customers
+                const tDiv = document.getElementById('render-tables');
+                let tHtml = '';
+                const seated = RT.customers.filter(c => c.state === 'seated');
+                seated.forEach((c, idx) => {
+                    // randomly place them roughly
+                    let top = 10 + (idx * 15) % 60;
+                    let left = 10 + (idx * 20) % 80;
+                    tHtml += `
+                        <div class="absolute flex flex-col items-center" style="top: ${top}%; left: ${left}%;">
+                            <div class="text-xs bg-coffee-800 text-coffee-200 px-1 rounded mb-1 shadow">${c.order.icon}</div>
+                            <span class="text-3xl filter drop-shadow-md">${c.emoji}</span>
+                        </div>
+                    `;
+                });
+                tDiv.innerHTML = tHtml;
+            },
+
+            updateMarket: function() {
+                const list = document.getElementById('market-list');
+                if(!list) return;
+                list.innerHTML = '';
+                
+                Object.keys(DB_INGREDIENTS).forEach(k => {
+                    let ing = DB_INGREDIENTS[k];
+                    let currentPrice = GS.marketPrices[k];
+                    let diff = currentPrice - ing.basePrice;
+                    let trendColor = diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-coffee-300';
+                    let trendIcon = diff > 0 ? '📈' : diff < 0 ? '📉' : '➖';
+                    let stock = GS.inventory[k] || 0;
+
+                    list.innerHTML += `
+                        <div class="glass-card p-4 rounded-xl flex flex-col">
+                            <div class="flex items-center gap-3 mb-2 border-b border-coffee-700/50 pb-2">
+                                <span class="text-3xl">${ing.icon}</span>
+                                <div>
+                                    <h3 class="font-bold text-coffee-100">${ing.name}</h3>
+                                    <p class="text-xs text-coffee-400">Stok: <span class="text-white font-mono">${stock}</span></p>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="font-mono text-lg font-bold text-yellow-100">${Utils.formatRupiah(currentPrice)}</span>
+                                <span class="text-xs ${trendColor}">${trendIcon}</span>
+                            </div>
+                            <div class="flex gap-2 mt-auto">
+                                <button onclick="Market.buy('${k}', 10)" class="flex-1 bg-coffee-800 hover:bg-coffee-700 py-1 rounded text-sm transition text-coffee-200 border border-coffee-600">Beli 10</button>
+                                <button onclick="Market.buy('${k}', 50)" class="flex-1 bg-coffee-700 hover:bg-coffee-600 py-1 rounded text-sm transition text-white border border-coffee-500">Beli 50</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            },
+
+            updateStaffTab: function() {
+                document.getElementById('staff-count').innerText = GS.staff.length;
+                document.getElementById('staff-limit').innerText = Utils.getMaxStaff();
+
+                const hiredList = document.getElementById('hired-staff-list');
+                hiredList.innerHTML = '';
+                GS.staff.forEach(s => {
+                    let isOwner = s.salary === 0;
+                    hiredList.innerHTML += `
+                        <div class="glass-card p-3 rounded-xl flex justify-between items-center border border-coffee-600/50">
+                            <div class="flex items-center gap-3">
+                                <span class="text-3xl bg-coffee-800 p-2 rounded-full border border-coffee-700">🧍</span>
+                                <div>
+                                    <p class="font-bold text-coffee-100">${s.name} ${isOwner?'<span class="text-[10px] bg-yellow-600/50 text-yellow-200 px-1 rounded ml-1">Owner</span>':''}</p>
+                                    <p class="text-xs text-coffee-300">Gaji: ${isOwner ? 'Gratis' : Utils.formatRupiah(s.salary)+'/hari'}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 items-center">
+                                <div class="text-right text-xs">
+                                    <p class="text-coffee-300">Kecepatan: <span class="text-coffee-100">${s.speed}x</span></p>
+                                    <p class="text-coffee-300">Status: <span class="${s.state==='idle'?'text-green-400':'text-yellow-400'} uppercase">${s.state}</span></p>
+                                </div>
+                                ${!isOwner ? `<button onclick="StaffManager.fire('${s.id}')" class="p-2 bg-red-900/50 hover:bg-red-800 text-red-300 rounded transition" title="Pecat Karyawan">🗑️</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                const marketList = document.getElementById('staff-market-list');
+                marketList.innerHTML = '';
+                RT.marketCandidates.forEach(s => {
+                    marketList.innerHTML += `
+                        <div class="bg-coffee-800/50 p-3 rounded-xl border border-coffee-700 flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <p class="font-bold text-coffee-100">🧍 ${s.name}</p>
+                                <p class="text-xs text-yellow-400 font-mono">${Utils.formatRupiah(s.salary)}/hr</p>
+                            </div>
+                            <div class="text-xs flex gap-4 text-coffee-300">
+                                <span>Kecepatan: ${s.speed}</span>
+                                <span>Keahlian: ${s.skill}</span>
+                            </div>
+                            <button onclick="StaffManager.hire('${s.id}')" class="w-full py-2 bg-green-700 hover:bg-green-600 text-white rounded text-sm transition mt-1">Rekrut</button>
+                        </div>
+                    `;
+                });
+            },
+
+            updateUpgradesTab: function() {
+                const list = document.getElementById('upgrades-list');
+                list.innerHTML = '';
+                
+                Object.keys(DB_UPGRADES).forEach(k => {
+                    let upg = DB_UPGRADES[k];
+                    let currentTier = GS.upgrades[k] || 0;
+                    let isMax = currentTier >= upg.maxTier;
+                    let cost = upg.cost * (currentTier + 1); // Cost increases per tier
+
+                    list.innerHTML += `
+                        <div class="glass-card p-5 rounded-2xl flex flex-col">
+                            <div class="text-4xl mb-3 text-center filter drop-shadow">${upg.icon}</div>
+                            <h3 class="font-bold text-lg text-center text-coffee-100 mb-1">${upg.name}</h3>
+                            <p class="text-xs text-center text-coffee-300 mb-3">${upg.desc}</p>
+                            
+                            <div class="bg-coffee-900/50 rounded-lg p-2 mb-4 text-center text-sm">
+                                <span class="text-coffee-400">Level: </span>
+                                <span class="font-bold text-coffee-100">${currentTier} / ${upg.maxTier}</span>
+                            </div>
+                            
+                            <button onclick="Upgrades.buy('${k}')" ${isMax ? 'disabled' : ''} class="mt-auto w-full py-2 ${isMax ? 'bg-coffee-800 text-coffee-500 cursor-not-allowed' : 'bg-coffee-700 hover:bg-coffee-600 text-coffee-100'} rounded transition font-semibold">
+                                ${isMax ? 'Maksimal' : `Beli (${Utils.formatRupiah(cost)})`}
+                            </button>
+                        </div>
+                    `;
+                });
+            },
+
+            updateResearchTab: function() {
+                document.getElementById('research-rep-display').innerText = GS.reputation;
+                const list = document.getElementById('research-list');
+                list.innerHTML = '';
+
+                Object.keys(DB_RESEARCH).forEach(k => {
+                    let res = DB_RESEARCH[k];
+                    let isUnlocked = GS.research[k];
+
+                    list.innerHTML += `
+                        <div class="bg-coffee-900/40 p-4 rounded-xl border ${isUnlocked ? 'border-purple-500/50' : 'border-coffee-700'} flex items-center gap-4">
+                            <div class="text-3xl ${isUnlocked ? '' : 'opacity-50 grayscale'}">${res.icon}</div>
+                            <div class="flex-1">
+                                <h3 class="font-bold ${isUnlocked ? 'text-purple-300' : 'text-coffee-200'}">${res.name}</h3>
+                                <p class="text-xs text-coffee-400">${res.desc}</p>
+                            </div>
+                            <div>
+                                ${isUnlocked 
+                                    ? `<span class="bg-purple-900 text-purple-200 px-3 py-1 rounded text-xs font-bold border border-purple-600">Terbuka</span>`
+                                    : `<button onclick="Research.unlock('${k}')" class="bg-purple-700 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm transition border border-purple-500 flex flex-col items-center leading-tight">
+                                        <span>Teliti</span>
+                                        <span class="text-[10px] text-purple-200">${res.cost} Poin</span>
+                                       </button>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        };
+
+        const Market = {
+            buy: function(itemKey, qty) {
+                let price = GS.marketPrices[itemKey] * qty;
+                if(Game.spendMoney(price)) {
+                    GS.inventory[itemKey] += qty;
+                    UI.updateMarket();
+                    AudioSys.playCash();
+                    Utils.showToast(`Membeli ${qty} ${DB_INGREDIENTS[itemKey].name}`, "success");
+                }
+            }
+        };
+
+        const StaffManager = {
+            hire: function(id) {
+                if(GS.staff.length >= Utils.getMaxStaff()) {
+                    Utils.showToast("Kapasitas karyawan penuh! Lakukan Riset.", "error");
+                    return;
+                }
+                let candIndex = RT.marketCandidates.findIndex(c => c.id === id);
+                if(candIndex !== -1) {
+                    let cand = RT.marketCandidates[candIndex];
+                    // pay advance salary to hire
+                    if(Game.spendMoney(cand.salary, 'expense')) {
+                        GS.staff.push(cand);
+                        RT.marketCandidates.splice(candIndex, 1);
+                        UI.updateStaffTab();
+                        AudioSys.playSuccess();
+                        Utils.showToast(`${cand.name} berhasil direkrut!`, "success");
+                    }
+                }
+            },
+            fire: function(id) {
+                if(confirm("Pecat karyawan ini?")) {
+                    GS.staff = GS.staff.filter(s => s.id !== id);
+                    UI.updateStaffTab();
+                    Utils.showToast("Karyawan dipecat.", "info");
+                }
+            }
+        };
+
+        const Upgrades = {
+            buy: function(id) {
+                let upg = DB_UPGRADES[id];
+                let current = GS.upgrades[id];
+                if(current >= upg.maxTier) return;
+                
+                let cost = upg.cost * (current + 1);
+                if(Game.spendMoney(cost)) {
+                    GS.upgrades[id]++;
+                    UI.updateUpgradesTab();
+                    AudioSys.playSuccess();
+                    Utils.showToast(`${upg.name} ditingkatkan ke level ${GS.upgrades[id]}`, "success");
+                    UI.updateStats(); // to update UI capacity if needed
+                }
+            }
+        };
+
+        const Research = {
+            unlock: function(id) {
+                let res = DB_RESEARCH[id];
+                if(GS.reputation >= res.cost && !GS.research[id]) {
+                    GS.reputation -= res.cost;
+                    GS.research[id] = true;
+                    UI.updateResearchTab();
+                    UI.updateStats();
+                    UI.updateStaffTab(); // update capacity text if HR researched
+                    AudioSys.playSuccess();
+                    Utils.showToast(`Riset Selesai: ${res.name}`, "success");
+                } else {
+                    Utils.showToast("Poin Reputasi tidak cukup!", "error");
+                    AudioSys.playError();
+                }
+            }
+        }
+
+        const Crafting = {
+            slots: [],
+            maxSlots: 4,
+
+            render: function() {
+                // Render Inventory choices
+                const invDiv = document.getElementById('craft-inventory');
+                invDiv.innerHTML = '';
+                Object.keys(DB_INGREDIENTS).forEach(k => {
+                    let ing = DB_INGREDIENTS[k];
+                    let stock = GS.inventory[k];
+                    invDiv.innerHTML += `
+                        <button onclick="Crafting.add('${k}')" ${stock<=0?'disabled':''} class="p-2 bg-coffee-800 border border-coffee-600 rounded flex flex-col items-center hover:bg-coffee-700 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                            <span class="text-2xl">${ing.icon}</span>
+                            <span class="text-[10px] mt-1 truncate w-full text-center">${ing.name}</span>
+                            <span class="text-[9px] text-coffee-400">${stock}</span>
+                        </button>
+                    `;
+                });
+
+                // Render Slots
+                const slotDiv = document.getElementById('craft-slots');
+                slotDiv.innerHTML = '';
+                for(let i=0; i<this.maxSlots; i++) {
+                    if(i < this.slots.length) {
+                        let ing = DB_INGREDIENTS[this.slots[i]];
+                        slotDiv.innerHTML += `<div class="w-12 h-12 bg-coffee-800 border-2 border-coffee-500 rounded flex items-center justify-center text-2xl" onclick="Crafting.remove(${i})" style="cursor:pointer">${ing.icon}</div>`;
+                    } else {
+                        slotDiv.innerHTML += `<div class="w-12 h-12 bg-coffee-900 border border-dashed border-coffee-700 rounded"></div>`;
+                    }
+                }
+
+                // Render Unlocked Recipes
+                const recDiv = document.getElementById('recipe-list');
+                recDiv.innerHTML = '';
+                document.getElementById('unlocked-recipe-count').innerText = GS.unlockedRecipes.length;
+                
+                GS.unlockedRecipes.forEach(rid => {
+                    let r = DB_RECIPES.find(x => x.id === rid);
+                    recDiv.innerHTML += `
+                        <div class="bg-coffee-800/80 p-3 rounded-lg border border-coffee-600/50 flex flex-col gap-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-coffee-900 rounded flex items-center justify-center text-xl">${r.icon}</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-coffee-100">${r.name}</h4>
+                                    <p class="text-xs text-yellow-300 font-mono">Harga Jual: ${Utils.formatRupiah(r.price)}</p>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-coffee-300 italic">"${r.desc}"</p>
+                        </div>
+                    `;
+                });
+            },
+
+            add: function(k) {
+                if(this.slots.length < this.maxSlots) {
+                    this.slots.push(k);
+                    this.render();
+                    AudioSys.playTone(300, 'sine', 0.1, 0.1); // blip
+                }
+            },
+
+            remove: function(index) {
+                this.slots.splice(index, 1);
+                this.render();
+            },
+
+            clear: function() {
+                this.slots = [];
+                this.render();
+            },
+
+            brew: function() {
+                if(this.slots.length === 0) return;
+
+                // Animate cauldron
+                let cauldron = document.getElementById('cauldron-icon');
+                cauldron.style.transform = 'scale(1.2) rotate(10deg)';
+                setTimeout(() => cauldron.style.transform = 'scale(1) rotate(0)', 300);
+                AudioSys.playTone(400, 'square', 0.1, 0.1);
+
+                // Deduct 1 of each from actual inventory for experiment cost
+                for(let k of this.slots) {
+                    GS.inventory[k] -= 1;
+                }
+
+                // Check recipe matching (order independent)
+                let attempt = [...this.slots].sort().join(',');
+                let found = null;
+
+                for(let r of DB_RECIPES) {
+                    let target = [...r.ingredients].sort().join(',');
+                    if(attempt === target) {
+                        found = r;
+                        break;
+                    }
+                }
+
+                if(found) {
+                    if(GS.unlockedRecipes.includes(found.id)) {
+                        Utils.showToast(`Itu resep ${found.name}, tapi kamu sudah tahu!`, "info");
+                    } else {
+                        GS.unlockedRecipes.push(found.id);
+                        AudioSys.playSuccess();
+                        Utils.showToast(`EUREKA! Menemukan Resep: ${found.name}!`, "success");
+                    }
+                } else {
+                    AudioSys.playError();
+                    Utils.showToast("Eksperimen gagal. Rasanya aneh.", "error");
+                }
+
+                this.clear(); // render happens here
+            }
+        };
+
+        // Mulai Game
+        window.onload = () => {
+            Game.init();
+        };
+
+    </script>
+</body>
+</html>
